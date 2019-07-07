@@ -1,0 +1,210 @@
+﻿
+@{
+    ViewBag.Title = "Asiakasryhmäluokat";
+}
+
+@section head{
+}
+
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            function listaaAsiakasryhmäluokat() {
+
+                //tuo asiakasryhmäluokkien tiedot kontrollerilta
+                $.getJSON("/asiakasryhmaluokka/getList", null, function (json) {
+                    var asiakasryhmat = JSON.parse(json)
+                    
+                    //luodaan html-taulukon sisältörunko
+                    var html = "";
+                    for (var i = 0; i < asiakasryhmat.length; i++) {
+                            html += "<tr>" +
+                            "<th scope ='row'></th>" +
+                            "<td>" + asiakasryhmat[i].RyhmäId + "</td>" +
+                            "<td>" + asiakasryhmat[i].RyhmäNimi + "</td>" +
+                            "<td>" + asiakasryhmat[i].RyhmäKuvaus + "</td>" +
+                            "<td><a href='#'><span class='fa fa-edit'></span></a></td>" +
+                            "<td><a href='#'><span class='fa fa-trash'></span></a></td>" +
+                            "</tr>\r\n"
+                    }
+                   
+                    //täytetään taulukko
+                    $("#Listaustaulukko tbody").html(html);
+
+                    //tietojen muokkaus
+                    $(".fa-edit").click(function () {
+
+                        //etsitään asiakkaan tiedot klikatulta riviltä
+                        var ryhmäId = $(this).parent().parent().prev().prev().prev().text();
+                        
+                        //haetaan ryhmän tiedot kontrollerilta id:n perusteella
+                        $.getJSON("/Asiakasryhmaluokka/GetSingleGroup/" + ryhmäId, null, function (json2) {
+                            var ryhmä = JSON.parse(json2);
+
+                            //tietojen lataus modaali-ikkunaan
+                            $('#groupModal_RyhmäId').val(ryhmä.RyhmäId)
+                            $('#groupModal_RyhmäNimi').val(ryhmä.RyhmäNimi)
+                            $('#groupModal_RyhmäKuvaus').val(ryhmä.RyhmäKuvaus)
+
+                            //näytetään modaali-ikkuna
+                            $('#groupModalTitle').text('Muokkaa asiakasryhmän tietoja');
+                            $('#groupModalDialog').modal('show');
+                        });
+                    });
+                    //tietojen poisto
+                    $(".fa-trash").click(function () {
+                        //haetaan klikatun rivin id-numero
+                        var ryhmäId = $(this).parent().parent().prev().prev().prev().prev().text();
+                                                
+                        //varmistetaan, että halutaan varmasti poistaa
+                        var ok = confirm("Haluatko varmasti poistaa ryhmän " + ryhmäId + "?");
+
+                        if (ok == true) {
+                            $.getJSON("/asiakasryhmaluokka/delete/" + ryhmäId, null, function (status) {
+                                if (status == true) {
+                                    alert("Ryhmän tiedot on poistettu onnistuneesti");
+                                    listaaAsiakasryhmäluokat();
+                                }
+                                else {
+                                    alert("Tietojan poisto ei onnistunut. Yritä uudelleen!");
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+
+            //sivun alustus
+            $(function () {
+                $('#Listaa').on('click', function () {
+                    listaaAsiakasryhmäluokat();
+                });
+
+                $('#Lisää').click(function () {
+
+                    //tyhjennetään ikkunan tiedot
+                    $('#groupModal_RyhmäId').val('(uusi)');
+                    $('#groupModal_RyhmäNimi').val('');
+                    $('#groupModal_RyhmäKuvaus').val('');
+
+                    //näytetään tyhjä modaali-ikkuna
+                    $('#groupModalTitle').text('Lisää uusi asiakasryhmä');
+                    $('#groupModalDialog').modal('show');
+                });
+
+                //Painetaan Tallenna => luetaan käyttäjän antamat tiedot modaali-ikkunasta
+                $("#groupModalSaveButton").click(function () {
+                    var details = {
+                        RyhmäId: $("#groupModal_RyhmäId").val(),
+                        RyhmäNimi: $("#groupModal_RyhmäNimi").val(),
+                        RyhmäKuvaus: $("#groupModal_RyhmäKuvaus").val()
+                    };
+
+                    /*Lähetetään tiedot kontrollerille,
+                     * annetaan käyttäjälle viesti päivityksen onnistumisesta,
+                     * piilotetaan modaali-ikkuna ja
+                     * päivitetään asiakasryhmälistaus*/
+                    $.post("/Asiakasryhmaluokka/Update/", details, function (status) {
+                        if (status == true) {
+                            $('#groupModalDialog').modal('hide');
+                            listaaAsiakasryhmäluokat();
+                        }
+                        else {
+                            alert('Tallennus ei valitettavasti onnistunut, tarkista tiedot!');
+                        }
+
+                    });
+                });
+
+            });
+
+            //tulostus
+            $('#TulostaButton').click(function () {
+                window.print();
+            });
+
+        });
+    </script>
+}
+
+<h2>Asiakasryhmäluokat</h2>
+
+
+<div>
+    <a class="btn btn-secondary" href="#" role="button" id="Listaa">Listaa asiakasryhmäluokat</a>
+    <a class="btn btn-secondary" href="#" role="button" id="Lisää">Lisää asiakasryhmäluokka</a>
+    <a class="btn btn-secondary" href="#" role="button" id="TulostaButton">Tulosta sivu</a>
+</div>
+
+<p>&nbsp;</p>
+
+<!-- Taulukko tietoja varten -->
+
+
+<table class="table table-striped" id="Listaustaulukko">
+    <thead class="thead-light">
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">AsiakasryhmäId&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Ryhmän nimi&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Ryhmän kuvaus&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Muokkaa</th>
+            <th scope="col">Poista</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div>
+    <a class="btn btn-secondary" href="~/Asiakasryhma/Index" role="button" id="PalaaAsiakasryhmiin">Paluu &raquo; Asiakasryhmät</a>
+</div>
+
+
+<!-- Modaali-ikkuna-->
+
+<div class="modal" tabindex="-1" role="dialog" id="groupModalDialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span id="groupModalTitle">Muokkaa ryhmän tietoja</span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3">AsiakasryhmäId</div>
+                    <div class="col-md-6"><input class="form-control" id="groupModal_RyhmäId" type="text" readonly></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Ryhmän nimi</div>
+                    <div class="col-md-6"><input class="form-control" id="groupModal_RyhmäNimi" type="text"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Ryhmän kuvaus</div>
+                    <div class="col-md-6"><input class="form-control" id="groupModal_RyhmäKuvaus" type="text"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="groupModalSaveButton">Tallenna</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Peruuta</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Scripti, jolla voidaan lajitella data sarakkeen otsikon mukaan-->
+<script>
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+    )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+    document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => tbody.appendChild(tr));
+    })));
+</script>

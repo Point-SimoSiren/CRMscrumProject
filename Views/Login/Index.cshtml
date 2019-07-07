@@ -1,0 +1,102 @@
+﻿@model CRM_Demo.Models.Login
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <title>CRM Kirjautuminen</title>
+
+    <style>
+
+        #login-div {
+            position: absolute;
+            left: 20%;
+            top: 30%;
+            border: 1px solid #ccc;
+            padding: 10px 10px;
+            background-color: ghostwhite;
+        }
+
+        .field-validation-error {
+            color: red;
+        }
+    </style>
+
+</head>
+
+<body style="background-color:floralwhite;">
+
+
+    <div id="login-div">
+        <h5>
+            Tervetuloa CRM sovellukseen. Aloita kirjautumalla sisään.
+        </h5>
+        <br>
+        @using (Html.BeginForm("Autherize", "Login", FormMethod.Post))
+        {
+            <table>
+                <tr>
+                    <td>
+                        @Html.LabelFor(model => model.Käyttäjätunnus)
+                    </td>
+                    <td>
+                        @Html.EditorFor(model => model.Käyttäjätunnus)
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        @Html.ValidationMessageFor(model => model.Käyttäjätunnus)
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        @Html.LabelFor(model => model.Salasana)
+                    </td>
+                    <td>
+                        @Html.EditorFor(model => model.Salasana)
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        @Html.ValidationMessageFor(model => model.Salasana)
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <label class="field-validation-error">
+                            @Html.DisplayFor(model => model.LoginErrorMessage)
+                        </label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td></td>
+                    <td>
+                        <input type="submit" name="name" value="Kirjaudu" />
+                        <input type="reset" name="name" value="Tyhjennä" />
+
+                    </td>
+                </tr>
+
+            </table>
+        }
+    </div>
+
+    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,93 @@
+﻿
+@{
+    Layout = null;
+
+    /*Alla on kirjautumissession tarkistus joka on käytössä jokaisella sivulla jossa
+    käytetään tätä layout sivua.*/
+
+    if (Session["LoginId"] == null)
+    {   
+        /*Ilman kirjautumista oleva käyttäjä ohjataan aina kirjautumaan, vaikka hän osaisi suoran url polun
+        johonkin sovelluksen alisivuun.*/
+
+        Response.Redirect("~/Login/Index");
+    }
+}
+
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - CRM</title>
+    @Styles.Render("~/Content/css")
+    <link href="~/Content/Site.css" rel="stylesheet" />
+    @Scripts.Render("~/bundles/modernizr")
+    @RenderSection("head", required: false)
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="top-container">
+        <div class="row">
+            <div class="col-md-3">
+                <img src="~/OmatKuvat/Logo.jpg" alt="Logo" class="rounded-circle" style="max-width:50%; padding-left:3rem;"  />
+            </div>
+
+            <div class="col-md-6">
+                <h3 style="text-align:center;">Asiakas Ky</h3>
+            </div>
+
+            <div class="col-md-3">
+                <h3>
+                    <!-- Logout painike -->
+                    <a class="nav-link" href="@Url.Action("LogOut","Login")" tabindex="-1">Kirjaudu ulos</a>
+                </h3>
+            </div>
+        </div>
+    </div>
+    &nbsp;
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-success ">
+        @*<a class="navbar-brand" href="#">
+                <img src="~/OmatKuvat/Logo.jpg" alt="Logo" class="rounded-circle" style="width:50px;" />
+            </a>*@
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-center" id="navbarNavAltMarkup">
+            <div class="navbar-nav fix">
+                <a class="nav-item nav-link" href="~/Home/Index" style="color:white;">Etusivu<span class="sr-only">(current)</span></a>
+                <a class="nav-item nav-link" href="~/Asiakas/Index" style="color:white;">Asiakkaat</a>
+                <a class="nav-item nav-link" href="~/Asiakaskategorialuokka/Index" style="color:white;">Asiakaskategoriat</a>
+                <a class="nav-item nav-link" href="~/Asiakasryhma/Index" style="color:white;">Asiakasryhmät</a>
+                <a class="nav-item nav-link" href="~/Asiakastapahtuma/Index" style="color:white;">Asiakastapahtumat</a>
+                @*<a class="nav-item nav-link" href="#" style="color:white;">Raportit</a>
+                <a class="nav-item nav-link" href="~/Email/Index" style="color:white;">Sähköposti</a>*@
+                <a class="nav-item nav-link" href="@Url.Action("LogOut","Login")" tabindex="-1" style="color:white;">Kirjaudu ulos</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <div class="row">
+                <div class="col-6">
+                    <p>@DateTime.Now.ToShortDateString()</p>
+                </div>
+                <div class="col-6" style="text-align:end">
+                    <p>&copy; Asiakas Ky @DateTime.Now.Year</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>

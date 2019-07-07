@@ -1,0 +1,223 @@
+﻿
+@{
+    ViewBag.Title = "Tapahtumalajit";
+}
+
+
+@section head{
+}
+
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            function listaaAsiakastapahtumalajit() {
+
+                //tuo asiakaskategorialuokkien tiedot kontrollerilta
+                $.getJSON("/Asiakastapahtumalaji/GetList", null, function (json) {
+                    var tapahtumalajit = JSON.parse(json)
+
+                    //luodaan html-taulukon sisältörunko
+                    var html = "";
+                    for (var i = 0; i < tapahtumalajit.length; i++) {
+                        html += "<tr>" +
+                            "<th scope ='row'></th>" +
+                            "<td>" + tapahtumalajit[i].TapahtumalajiId + "</td>" +
+                            "<td>" + tapahtumalajit[i].TapahtumalajiNimi + "</td>" +
+                            "<td>" + tapahtumalajit[i].TapahtumalajiKuvaus + "</td>" +
+                            "<td><a href='#' id ='muokkaa_asiakastapahtumalaji_btn' data-id='" +
+                            tapahtumalajit[i].TapahtumalajiId + "' data-nimi='" +
+                            tapahtumalajit[i].TapahtumalajiNimi + "' data-kuvaus='" +
+                            tapahtumalajit[i].TapahtumalajiKuvaus + "'><span class='fa fa-edit'></span></a></td>"
+                            + "<td><a href='#' id ='poista_asiakastapahtumalaji_btn' data-id="
+                            + tapahtumalajit[i].TapahtumalajiId
+                            + "><span class='fa fa-trash'></span></a></td>" +
+                            "</tr>\r\n"
+                    }
+
+                    //täytetään taulukko
+                    $("#Listaustaulukko tbody").html(html);
+                });
+            }
+
+            //Listaa nappi;
+            $('#listaalajit_btn').on('click', function () {
+                listaaAsiakastapahtumalajit();
+            });
+
+            // Muokkaa nappi;
+            $(document).on('click', '#muokkaa_asiakastapahtumalaji_btn', function () {
+                $("#tapahtumalaji_container_otsikko").text("Muokkaa asiakastapahtumalajia");
+                $("#TapahtumalajiId").val($(this).attr('data-id'));
+                $("#TapahtumalajiNimi").val($(this).attr('data-nimi'));
+                $("#TapahtumalajiKuvaus").val($(this).attr('data-kuvaus'));
+
+                $("#lisaa_asiakastapahtumalaji").modal("show");
+
+
+            });
+
+            // Poista nappi;
+            $(document).on('click', '#poista_asiakastapahtumalaji_btn', function () {
+
+                // luetaan id data-atrribuutista
+                var details = {
+                    id: $(this).attr('data-id')
+                };
+
+                var ok = confirm("Haluatko varmasti poistaa asiakastapahtumalajin " + details.id + "?");
+
+                if (ok == true) {
+
+                    $.post("/Asiakastapahtumalaji/Delete/", details, function (status) {
+                        if (status != "error") {  //Jo ei error
+
+                            $("#lisaa_asiakastapahtumalaji").modal("hide");
+                            listaaAsiakastapahtumalajit();
+                        } else {
+                            alert("Poisto ei onnistunut, yritä uudelleen!" + status);
+                        }
+                    });
+                }
+            });
+
+
+            $('#lisaa_asiakastapahtumalaji_btn').on('click', function () {
+                // näytetään ikkuna
+                $("#tapahtumalaji_container_otsikko").text("Lisää uusi asiakastapahtumalaji");
+                $("#TapahtumalajiId").val("Uusi Tapahtumalaji");
+                $("#TapahtumalajiNimi").val("");
+                $("#TapahtumalajiKuvaus").val("");
+                $("#lisaa_asiakastapahtumalaji").modal("show");
+
+            });
+
+            $("#uusi_tapahtumalaji_tallenna_btn").click(function () {
+
+                // luetaan käyttäjän syöttämät kentät
+
+                var tmp_id = $("#TapahtumalajiId").val();
+                var tmp_tyyppi = "";
+
+                if ($("#TapahtumalajiId").val() == "Uusi Tapahtumalaji") {
+                    tmp_id = "0";
+                    tmp_tyyppi = "Uusi Tapahtumalaji";
+                } else { }
+
+                var details = {
+                    Tapahtumalajimuutostyyppi: tmp_tyyppi,
+                    TapahtumalajiId: tmp_id,
+                    TapahtumalajiNimi: $("#TapahtumalajiNimi").val(),
+                    TapahtumalajiKuvaus: $("#TapahtumalajiKuvaus").val(),
+
+                };
+                
+                //Jos tyhjä
+                if ($.trim($("#TapahtumalajiKuvaus").val()).length === 0 || $.trim($("#TapahtumalajiNimi").val()).length === 0) {
+
+                    alert("Täytä kaikki kentät");
+
+                    //jos tekstiä syötetty
+                } else {
+
+                    $.post("/Asiakastapahtumalaji/Create/", details, function (status) {
+                        if (status != "error") {  //Jos ei error
+
+                            $("#lisaa_asiakastapahtumalaji").modal("hide");
+                            listaaAsiakastapahtumalajit();
+
+                        } else {
+                            alert("Tallennus ei onnistunut, yritä uudelleen!" + status);
+                        }
+                    });
+
+                } //End else
+            }); //end function
+
+            //tulostus
+            $('#TulostaButton').click(function () {
+                window.print();
+            });
+
+        });
+    </script>
+}
+
+<h2>Asiakastapahtumalajit</h2>
+
+<div>
+    <a class="btn btn-secondary" href="#" role="button" id="listaalajit_btn">Listaa asiakastapahtumalajit</a>
+    <a class="btn btn-secondary" href="#" role="button" id="lisaa_asiakastapahtumalaji_btn">Lisää asiakastapahtumalaji</a>
+    <a class="btn btn-secondary" href="#" role="button" id="TulostaButton">Tulosta sivu</a>
+</div>
+<p>&nbsp;</p>
+
+<!-- Taulukko tietoja varten -->
+
+<table class="table table-striped" id="Listaustaulukko">
+    <thead class="thead-light">
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">Id&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Nimi&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Kuvaus&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Muokkaa&nbsp;</th>
+            <th scope="col">Poista&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div>
+    <a class="btn btn-secondary" href="~/Asiakastapahtuma/Index" role="button" id="PalaaAsiakastapahtumiin">Paluu &raquo; Asiakastapahtumat</a>
+</div>
+
+<!--Muokkaa projektia ikkuna-->
+<div class="modal fade" tabindex="-1" role="dialog" id="lisaa_asiakastapahtumalaji">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"><span id="tapahtumalaji_container_otsikko">Lisää Tapahtumalaji</span></h4>
+            </div>
+            <div class="modal-body">
+
+                <div class="row">
+                    <div class="col-md-3">Id</div>
+                    <div class="col-md-6"><input class="form-control" id="TapahtumalajiId" type="text" readonly></div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-md-3">Nimi</div>
+                    <div class="col-md-6"><input class="form-control" id="TapahtumalajiNimi" type="text"></div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-md-3">Kuvaus</div>
+                    <div class="col-md-6"><input class="form-control" data-toggle="validator" id="TapahtumalajiKuvaus" type="text" required></div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-success" id="uusi_tapahtumalaji_tallenna_btn">Tallenna</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Peruuta</button>
+
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!--Sarakkeiden lajittelu otsikon mukaan-->
+<script>
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2))
+        (getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+    document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => tbody.appendChild(tr));
+    })));
+</script> 

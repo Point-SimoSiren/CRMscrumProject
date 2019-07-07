@@ -1,0 +1,324 @@
+﻿
+@{
+    ViewBag.Title = "Asiakkaat";
+}
+
+@section head{
+}
+
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            function paivita_asiakaskategoriat_lista() {
+                $.getJSON("/asiakaskategorialuokka/getlist", null, function (json) {
+                    var asiakaskategoriat = JSON.parse(json)
+                    $("#customerModal_KategoriaIdlist").empty(); //Tyhjennä asiakaskategoriat lista
+
+                    for (var index = 0; index < asiakaskategoriat.length; index++) {
+                        //Lisää asiakaskategoriat listaan
+                        $("#customerModal_KategoriaIdlist").append('<option value="' + asiakaskategoriat[index].KategoriaId + '">' + asiakaskategoriat[index].KategoriaNimi + '</option>')
+                    }
+                });
+
+            } //end function
+
+
+            function paivita_postinumero_lista() {
+                $.getJSON("/postitoimipaikka/getlist", null, function (json) {
+                    var postinumerot = JSON.parse(json)
+                    $("#customerModal_PostinumeroList").empty(); //Tyhjennä postinumerolista
+
+                    for (var index = 0; index < postinumerot.length; index++) {
+                        //Lisää postinumerot listaan
+                        $("#customerModal_PostinumeroList").append('<option value="' + postinumerot[index].Postinumero + '">' + postinumerot[index].Postinumero + ' ' + postinumerot[index].Postitoimipaikka + '</option>')
+                    }
+                });
+
+            } //end function
+
+
+
+
+
+            function listaaAsiakastiedot() {
+
+                //tuo asiakkaiden tiedot kontrollerilta
+                $.getJSON("/Asiakas/GetList", null, function (json) {
+                    var asiakkaat = JSON.parse(json)
+
+                    //luodaan html-taulukon sisältörunko
+                    var html = "";
+                    for (var i = 0; i < asiakkaat.length; i++) {
+                        
+                        html += "<tr>" +
+                            "<th scope ='row'></th>" +
+                            "<td>" + asiakkaat[i].AsiakasId + "</td>" +
+                            "<td>" + asiakkaat[i].Etunimi + "</td>" +
+                            "<td>" + asiakkaat[i].Sukunimi + "</td>" +
+                            "<td>" + asiakkaat[i].Osoite + "</td>" +
+                            "<td>" + asiakkaat[i].Postinumero + "</td>" +
+                            "<td>" + asiakkaat[i].Puhelin + "</td>" +
+                            "<td>" + asiakkaat[i].Sähköposti + "</td>" +
+                            "<td>" + asiakkaat[i].KategoriaNimi + "</td>" +
+                            "<td>" + asiakkaat[i].Tila + "</td>" +
+                            "<td><a href='#'><span class='fa fa-edit'></span></a></td>" +
+                            "<td><a href='#'><span class='fa fa-trash'></span></a></td>" +
+                            "</tr>\r\n"
+                    }
+
+                    //täytetään taulukko
+                    $("#Listaustaulukko tbody").html(html);
+
+                    //tietojen muokkaus
+                    $(".fa-edit").click(function () {
+
+                        //Päivitä asiakasgategoria lista
+                        paivita_asiakaskategoriat_lista();
+
+                        //Päivitä postinumerolista
+                        paivita_postinumero_lista();
+
+                        //etsitään asiakkaan tiedot klikatulta riviltä
+                        var asiakasId = $(this).parent().parent().prev().prev().prev().prev().prev().prev().prev().prev().prev().text();
+
+                        //haetaan asiakkaan tiedot kontrollerilta id:n perusteella
+                        $.getJSON("/Asiakas/GetSingleGroup/" + asiakasId, null, function (json2) {
+                            var asiakas = JSON.parse(json2);
+
+                            
+                            //tietojen lataus modaali-ikkunaan
+                            $('#customerModal_AsiakasId').val(asiakas.AsiakasId);
+                            $('#customerModal_Etunimi').val(asiakas.Etunimi);
+                            $('#customerModal_Sukunimi').val(asiakas.Sukunimi);
+                            $('#customerModal_Osoite').val(asiakas.Osoite);
+                            $('#customerModal_PostinumeroList').val(asiakas.Postinumero);
+                            $('#customerModal_Puhelin').val(asiakas.Puhelin);
+                            $('#customerModal_Sähköposti').val(asiakas.Sähköposti);
+                            $('#customerModal_KategoriaIdlist').val(asiakas.KategoriaId);
+
+                            $('#customerModal_Tila').val(asiakas.Tila.toString());//Huom! koska vastaus on boolean muutetaan se stringiksi
+
+                            //näytetään modaali-ikkuna
+                            $('#customerModalTitle').text('Muokkaa asiakkaan tietoja');
+                            $('#customerModalDialog').modal('show');
+
+                        }); //end getJSON(asiakas/getsinglegroup)
+
+                    });  //end fa-edit.click
+
+                    //asiakkaan poisto
+                    $(".fa-trash").click(function () {
+                        //etsitään asiakkaan tiedot klikatulta riviltä
+                        var asiakasId = $(this).parent().parent().prev().prev().prev().prev().prev().prev().prev().prev().prev().prev().text();
+                        var ok = confirm("Haluatko varmasti poistaa asiakkaan " + asiakasId + "?");
+
+                        if (ok == true) {
+                            $.getJSON("/Asiakas/Delete/" + asiakasId, null, function (status) {
+                                if (status == true) {
+                                    alert('Asiakas on nyt poistettu!');
+                                    listaaAsiakastiedot();
+                                }
+                                else {
+                                    alert('Poistaminen ei valitettavasti onnistunut, tarkista tiedot!');
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+            //sivun alustus
+            $(function () {
+                $('#ListaaAsiakastiedot').on('click', function () {
+                    listaaAsiakastiedot();
+                });
+
+                //asiakkaan lisäys
+                $('#LisääAsiakas').click(function () {
+
+                    //Päivitä asiakasgategoria lista
+                    paivita_asiakaskategoriat_lista();
+
+                    //Päivitä postinumerolista
+                    paivita_postinumero_lista();
+
+
+                    //tyhjennetään ikkunan tiedot
+                    $('#customerModal_AsiakasId').val('(Uusi Asiakas)');
+                    $('#customerModal_Etunimi').val('');
+                    $('#customerModal_Sukunimi').val('');
+                    $('#customerModal_Osoite').val('');
+                    $('#customerModal_Postinumero').val('');
+                    $('#customerModal_Puhelin').val('');
+                    $('#customerModal_Sähköposti').val('');
+                    
+                    //näytetään tyhjä modaali-ikkuna
+                    $('#customerModalTitle').text('Lisää uusi asiakas');
+                    $('#customerModalDialog').modal('show');
+                });
+
+                //Painetaan Tallenna => luetaan käyttäjän antamat tiedot modaali-ikkunasta
+                $("#customerModalSaveButton").click(function () {
+
+                    var details = {
+                        AsiakasId: $("#customerModal_AsiakasId").val(),
+                        Etunimi: $("#customerModal_Etunimi").val(),
+                        Sukunimi: $("#customerModal_Sukunimi").val(),
+                        Osoite: $("#customerModal_Osoite").val(),
+                        Postinumero: $("#customerModal_PostinumeroList").val(),
+                        Puhelin: $("#customerModal_Puhelin").val(),
+                        Sähköposti: $("#customerModal_Sähköposti").val(),
+                        KategoriaId: $("#customerModal_KategoriaIdlist").val(),
+                        Tila: $("#customerModal_Tila").val()
+                    };
+
+                    /*Lähetetään tiedot kontrollerille,
+                     * annetaan käyttäjälle viesti päivityksen onnistumisesta,
+                     * piilotetaan modaali-ikkuna ja
+                     * päivitetään asiakaslistaus*/
+                    $.post("/Asiakas/Update/", details, function (status) {
+                        if (status == true) {
+                            $('#customerModalDialog').modal('hide');
+                            listaaAsiakastiedot();
+                        }
+                        else {
+                            alert('Tallennus ei valitettavasti onnistunut, tarkista tiedot!');
+                        }
+                    }); //end post(asiakastapahtuma/update)
+
+                }); //end Tallenna-napin klikkaus
+
+            }); //end sivun alustus
+
+            //tulostus
+            $('#TulostaButton').click(function () {
+                window.print();
+            });
+
+        });//end document ready
+    </script>
+}
+
+<h2>Asiakkaat</h2>
+
+<div>
+    <a class="btn btn-secondary" href="#" role="button" id="ListaaAsiakastiedot">Listaa asiakastiedot</a>
+    <a class="btn btn-secondary" href="#" role="button" id="LisääAsiakas">Lisää asiakas</a>
+    <a class="btn btn-secondary" href="#" role="button" id="TulostaButton">Tulosta sivu</a>
+</div>
+
+<p>&nbsp;</p>
+
+<!-- Taulukko tietoja varten -->
+
+
+<table class="table table-striped" id="Listaustaulukko">
+    <thead class="thead-light">
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">AsiakasId&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Etunimi&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Sukunimi&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Osoite&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Postinumero&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Puhelin&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Sähköposti&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Asiakaskategoria&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Tila&nbsp;<span><img src="~/OmatKuvat/elevator.png"/></span></th>
+            <th scope="col">Muokkaa</th>
+            <th scope="col">Poista</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+<!-- Modaali-ikkuna-->
+
+<div class="modal" tabindex="-1" role="dialog" id="customerModalDialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span id="customerModalTitle">Muokkaa asiakkaan tietoja</span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3">AsiakasId</div>
+                    <div class="col-md-6"><input class="form-control" id="customerModal_AsiakasId" type="text" readonly></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Etunimi</div>
+                    <div class="col-md-6"><input class="form-control" id="customerModal_Etunimi" type="text"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Sukunimi</div>
+                    <div class="col-md-6"><input class="form-control" id="customerModal_Sukunimi" type="text"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Osoite</div>
+                    <div class="col-md-6"><input class="form-control" id="customerModal_Osoite" type="text"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Postinumero</div>
+                    <div class="col-md-6">
+                        <select class="form-control" id="customerModal_PostinumeroList">
+                            <option>Odota ladataan..</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Puhelin</div>
+                    <div class="col-md-6"><input class="form-control" id="customerModal_Puhelin" type="text"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Sähköposti</div>
+                    <div class="col-md-6"><input class="form-control" id="customerModal_Sähköposti" type="text"></div>
+                </div>
+                
+
+                <div class="row">
+                    <div class="col-md-3">KategoriaNimi</div>
+                    <div class="col-md-6">
+                        <select class="form-control" id="customerModal_KategoriaIdlist">
+                            <option>Odota ladataan..</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-md-3">Tila</div>
+                    <div class="col-md-6">
+                        <select class="form-control" id="customerModal_Tila">
+                            <option value="true">Aktiivinen</option>
+                            <option value="false">Passiivinen</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="customerModalSaveButton">Tallenna</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Peruuta</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Sarakkeiden lajittelu otsikon mukaan-->
+<script>
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2))
+        (getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+        document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => tbody.appendChild(tr));
+    })));
+</script> 

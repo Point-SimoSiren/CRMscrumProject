@@ -1,0 +1,275 @@
+﻿
+@{
+    ViewBag.Title = "Asiakasryhmät";
+}
+
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            function paivita_asiakas_lista() {
+                $.getJSON("/asiakas/getlist", null, function (json) {
+                    var asiakas = JSON.parse(json)
+                    $("#ryhmäModal_AsiakasId").empty(); //Tyhjennä asiakaslista
+
+                    for (var index = 0; index < asiakas.length; index++) {
+                        //Lisää asiakas listaan
+                        $("#ryhmäModal_AsiakasId").append('<option value="' +
+                            asiakas[index].AsiakasId + '">' + asiakas[index].Sukunimi + ',' + asiakas[index].Etunimi + '</option>')
+                    }
+                });
+
+            } //end paivita_asiakas_lista_function
+
+
+            function paivita_asiakasryhmäluokka_lista() {
+                $.getJSON("/asiakasryhmaluokka/getlist", null, function (json) {
+                    var asiakasryhmäluokat = JSON.parse(json)
+                    $("#ryhmäModal_RyhmäId").empty(); //Tyhjennä asiakasryhmäluokkalista
+
+                    for (var index = 0; index < asiakasryhmäluokat.length; index++) {
+                        //Lisää asiakas listaan
+                        $("#ryhmäModal_RyhmäId").append('<option value="' + asiakasryhmäluokat[index].RyhmäId + '">' + asiakasryhmäluokat[index].RyhmäNimi + '</option>')
+                    }
+                });
+
+            } //end paivita_Asiakasryhmäluokka_lista_function
+
+            function listaaAsiakkaatRyhmittäin() {
+                //tuo tiedot kontrollerilta
+                $.getJSON("/asiakasryhma/getlist", null, function (json) {
+                    var lista = JSON.parse(json)
+                    //luodaan html-taulukon sisältörunko
+                    var html = "";
+                    for (var i = 0; i < lista.length; i++) {
+                        
+                        html += "<tr>" +
+                            "<th scope='row'></th>" +
+                            "<td>" + lista[i].AsiakasryhmäId + "</td>" +
+                            "<td>" + lista[i].RyhmäNimi + "</td>" +
+                            "<td>" + lista[i].Etunimi + "</td>" +
+                            "<td>" + lista[i].Sukunimi + "</td>" +
+                            "<td><a href='#'><span class='fa fa-edit'></span></a></td>" +
+                            "<td><a href='#'><span class='fa fa-trash'></span></a></td>" +
+                            "</tr>\r\n"
+
+
+                    } //end html-taulukon runko
+                    //täytetään taulukko
+                    $("#Listaustaulukko tbody").html(html);
+
+                    //tietojen muokkaus
+
+
+                    //tietojen muokkaus
+                    $(".fa-edit").click(function () {
+
+                        //päivitä asiakaslista dropdowniin
+                        paivita_asiakas_lista();
+
+                        //päivitä ryhmäluokat dropdowniin
+                        paivita_asiakasryhmäluokka_lista();
+
+                        //etsitään asiakasryhmän tiedot valitulta riviltä
+                        var asiakasryhmäId = $(this).parent().parent().prev().prev().prev().prev().text();
+
+                       
+                        //haetaan asiakasryhmän tiedot kontrollerilta id:n perusteella
+                        $.getJSON("/asiakasryhma/getsinglegroup/" + asiakasryhmäId, null, function (json) {
+                            var asiakasryhmä = JSON.parse(json);
+
+                            
+                            //asiakasryhmän tietojen lataus modaali-ikkunaan
+                            $('#ryhmäModal_AsiakasryhmäId').val(asiakasryhmä.AsiakasryhmäId);
+                            $('#ryhmäModal_AsiakasId').val(asiakasryhmä.AsiakasId);
+                            $('#ryhmäModal_RyhmäId').val(asiakasryhmä.RyhmäId);
+
+
+                            //Näytetään modaali-ikkuna
+                            $('#ryhmäModalTitle').text('Muokkaa asiakkaan ryhmätietoja');
+                            $('#ryhmäModalDialog').modal('show');
+
+                        });  //end getJson (asiakasryhmä/getsinglegroup)
+
+                    });  //end fa-edit.click
+
+
+                    //tietojen poisto
+
+                    $(".fa-trash").click(function () {
+
+                        //etsitään tapahtuman tiedot klikatulta riviltä
+                        var asiakasryhmäId = $(this).parent().parent().prev().prev().prev().prev().prev().text();
+                        
+                        var ok = confirm("Haluatko varmasti poistaa asiakkaan ryhmästä " + asiakasryhmäId + "?")
+
+                        if (ok == true) {
+                            $.getJSON("/asiakasryhma/delete/" + asiakasryhmäId, null, function (status) {
+                                if (status == true) {
+                                    alert("Asiakas on nyt poistettu ryhmästä!");
+                                    listaaAsiakkaatRyhmittäin();
+                                }
+                                else {
+                                    alert("Ryhmästä poisto ei valitettavasti onnistunut!");
+                                }
+                            });  //end getJSON (asiakasryhmä/delete)
+
+                        } //end if (ok ==true)
+
+                    }); //end asiakasryhmäliitoksen poisto
+
+                });  //end getJSON(asiakasryhma/getlist)
+            } //end function listaaAsiakkaatRyhmittäin
+
+
+            //sivun alustus
+            $(function () {
+                $("#ListaaAsiakkaatRyhmittäin").click(function () {
+                    listaaAsiakkaatRyhmittäin();
+                });
+
+                //tapahtuman lisäys
+                $('#LisääAsiakasRyhmään').click(function () {
+
+                    //päivitä asiakaslista dropdowniin
+                    paivita_asiakas_lista();
+
+                    //päivitä tapahtumalajit dropdowniin
+                    paivita_asiakasryhmäluokka_lista();
+
+                    //tyhjennetään modaali-ikkkunan tiedot
+                    $('#ryhmäModal_AsiakasryhmäId').val('(Uuden lisääminen)');
+                    $('#ryhmäModal_AsiakasId').val('');
+                    $('#ryhmäModal_RyhmäId').val('');
+
+                    
+                    //näytetään tyhjä modaali-ikkuna
+                    $('#ryhmäModalTitle').text('Lisää asiakas ryhmään');
+                    $('#ryhmäModalDialog').modal('show');
+
+                });
+
+                //Tallenna-nappi
+
+                //Tallenna -nappi => luetaan käyttäjän antamat modaali-ikkunan tiedot
+                $('#ryhmäModalSaveButton').click(function () {
+                    
+                    var details = {
+                        AsiakasryhmäId: $('#ryhmäModal_AsiakasryhmäId').val(),
+                        AsiakasId: $('#ryhmäModal_AsiakasId').val(),
+                        RyhmäId: $('#ryhmäModal_RyhmäId').val()
+                    };
+                    //Välitetään tiedot controllerille ja edelleen tietokantaan
+                    //Jos onnistuu, piilotetaan modaali-ikkuna ja päivitetäään asiakasryhmä listaus, infotaan tarvittaessa käyttäjää
+                    $.post("/asiakasryhma/update/", details, function (status) {
+
+                        
+                        if (status == true) {
+                            $('#ryhmäModalDialog').modal('hide');
+                            listaaAsiakkaatRyhmittäin();
+                        }
+                        else {
+                            alert("Tallennus ei valitettavasti onnistunut, yritä uudelleen!");
+                        }
+                                                
+                    }); //end post(asiakastapahtuma/update)
+
+                });  //end Tallenna-napin klikkaus
+            }); //end sivun alustus
+
+            //tulostus
+            $('#TulostaButton').click(function () {
+                window.print();
+            });
+
+        }); //end document ready function
+    </script>
+}
+
+<h2>Asiakkaat ryhmittäin</h2>
+
+<div>
+    <a class="btn btn-secondary" href="#" role="button" id="ListaaAsiakkaatRyhmittäin">Listaa asiakkaat ryhmittäin</a>
+    <a class="btn btn-secondary" href="#" role="button" id="LisääAsiakasRyhmään">Lisää asiakas ryhmään</a>
+    <a class="btn btn-secondary" href="~/Asiakasryhmaluokka/Index" role="button" id="MuokkaaAsiakasryhmiä">Muokkaa asiakasryhmäluokkia</a>
+    <a class="btn btn-secondary" href="#" role="button" id="TulostaButton">Tulosta sivu</a>
+</div>
+
+<p>&nbsp;</p>
+
+<!-- taulukko tietoja varten -->
+<table class="table table-striped" id="Listaustaulukko">
+    <thead class="thead-light">
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">AsiakasryhmäID&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Ryhmän nimi&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Asiakkaan etunimi&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Asiakkaan sukunimi&nbsp;<span><img src="~/OmatKuvat/elevator.png" /></span></th>
+            <th scope="col">Muokkaa</th>
+            <th scope="col">Poista</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+<p>&nbsp;</p>
+
+<!-- Modaali-ikkuna-->
+
+<div class="modal" tabindex="-1" role="dialog" id="ryhmäModalDialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span id="ryhmäModalTitle">Muokkaa ryhmän tietoja</span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3">AsiakasryhmäId</div>
+                    <div class="col-md-6"><input class="form-control" id="ryhmäModal_AsiakasryhmäId" type="text" readonly></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Asiakas</div>
+                    <div class="col-md-6">
+                        <select class="form-control" id="ryhmäModal_AsiakasId">
+                            <option>Odota ladataan..</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">Ryhmä</div>
+                    <div class="col-md-6">
+                        <select class="form-control" id="ryhmäModal_RyhmäId">
+                            <option>Odota ladataan..</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="ryhmäModalSaveButton">Tallenna</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Peruuta</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripti, jolla voidaan lajitella data sarakkeen otsikon mukaan-->
+<script>
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+    )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+    document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => tbody.appendChild(tr));
+    })));
+</script>
